@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block title %} Error {% endblock %}
+   
+{% block content %}
+    <h1>Error</h1>
+
+    <ul class="list-group">
+      {% for error in errors %}
+        <li class="list-group-item">
+            
+         </li>
+      {% endfor %}
+     </ul>
+
+    <p class="mt-3">
+        <a class="btn btn-sm btn-secondary" href="/">Return Home</a>
+    </p>
+{% endblock %}
+

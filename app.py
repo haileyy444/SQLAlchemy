@@ -1,8 +1,8 @@
 """Blogly application."""
 
-from flask import Flask, request, redirect, render_template
+from flask import Flask, request, redirect, render_template, current_app
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
+from models import db, connect_db, User, Post
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///blogly'
@@ -17,20 +17,44 @@ connect_db(app)
 with app.app_context():
     db.create_all()
 
+
+
+
+
+# admin stuff
 @app.route('/')
 def home():
         # Home Page
-        return redirect("/users")
+        posts = Post.query.order_by(Post.post_date.desc()).limit(5).all()
+        return render_template("posts/directory.html", posts=posts)
 
 
+@app.errorhandler(404)
+def error(e): 
+        return render_template('error.html'), 404
+
+
+
+
+
+
+
+
+# users directory
 @app.route('/users')
 def users_directory():
         # directory of users
-        users = User.query.order_by(User.last_name, User.first_name).all()
         print(current_app.jinja_env.list_templates())
+        users = User.query.order_by(User.last_name, User.first_name).all()
+        
         return render_template("users/directory.html", users=users)
+                               
 
 
+
+
+
+# adding a user
 @app.route('/users/new', methods=["GET"])
 def add_users_form():
         # add users form
@@ -51,13 +75,15 @@ def add_users():
 
 
 
+
+
+
+# specific user and capabilities
 @app.route('/users/<int:user_id>')
 def user_inspect(user_id):
         # inspect user from directory - more info page
         user = User.query.get_or_404(user_id)
-        return render_template("users/inspect.html", user=user)
-
-
+        return render_template("users/show.html", user=user)
 
 @app.route('/users/<int:user_id>/edit')
 def edit_user_inspect(user_id):
@@ -85,3 +111,71 @@ def delete_user(user_id):
         db.session.delete(user)
         db.session.commit()
         return redirect("/users")
+
+
+
+
+# Posts
+@app.route('/users/<int:user_id>/posts', methods=["GET"])
+def get_posts(user_id):
+        
+        user = User.query.get_or_404(user_id)
+        posts = Post.query.filter_by(poster=user_id).all()
+        print(posts)
+        return render_template("posts/userposts.html", posts=posts, user=user)
+
+# adding a post
+@app.route('/users/<int:user_id>/posts/new')
+def new_post_get(user_id):
+        
+        user = User.query.get_or_404(user_id)
+        return render_template("posts/new.html", user=user)
+
+
+@app.route('/users/<int:user_id>/posts/new', methods=["POST"])
+def new_post_post(user_id):
+        
+        user = User.query.get_or_404(user_id)
+        new_post = Post(post_title=request.form['post_title'], post_text=request.form['post_text'], poster = user.id)
+
+        db.session.add(new_post)
+        db.session.commit()
+
+        return redirect( f"/users/{user_id}" )
+
+
+
+# specific  posts
+@app.route('/posts/<int:post_id>')
+def inspect_post(post_id):
+        # inspect post  more info page
+        post = Post.query.get_or_404(post_id)
+        return render_template("posts/show.html", post=post)
+
+@app.route('/posts/<int:post_id>/edit')
+def edit_post(post_id):
+        # inspect post  more info page
+        post = Post.query.get_or_404(post_id)
+        return render_template("posts/edit.html", post=post)
+
+@app.route('/posts/<int:post_id>/edit', methods=["POST"])
+def update_post(post_id):
+        # inspect post  more info page
+        post = Post.query.get_or_404(post_id)
+        post.title = request.form["post_title"]
+        post.text = request.form["post_text"]
+
+        db.session.add(post)
+        db.session.commit()
+
+        return redirect(f"/users/{post.user.id}")
+
+@app.route('/posts/<int:post_id>/delete', methods=["POST"])
+def delete_post(post_id):
+        # inspect post  more info page
+        post = Post.query.get_or_404(post_id)
+
+        db.session.delete(post)
+        db.session.commit()
+        
+        return redirect(f"/users/{post.user.id}")
