@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
-from datetime import datetime
+import datetime
 
 db = SQLAlchemy()
 
@@ -33,10 +33,27 @@ class Post(db.Model):
 
 
     user = relationship("User", back_populates = "posts")
+    tags = db.relationship("Tag", secondary="posts_tags", back_populates="posts")
     
     @property
     def friendly_date(self): 
         return self.post_date.strftime("%a %b %-d %Y, %-I:%M %p")
+
+
+class Tag(db.Model):
+    __tablename__ = "tags"
+
+    id = db.Column(db.Integer, primary_key=True)
+    tag_text = db.Column(db.Text, nullable=False)
+
+    posts = db.relationship("Post", secondary="posts_tags", back_populates = "tags")
+
+class PostTag(db.Model):
+    __tablename__ = "posts_tags"
+
+    post_id = db.Column(db.Integer, db.ForeignKey('posts.id'), primary_key=True)
+    tag_id = db.Column(db.Integer, db.ForeignKey('tags.id'), primary_key=True)
+
 
 
 def connect_db(app): 

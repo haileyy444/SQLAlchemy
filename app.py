@@ -2,7 +2,7 @@
 
 from flask import Flask, request, redirect, render_template, current_app
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User, Post
+from models import db, connect_db, User, Post, Tag
 from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
@@ -35,12 +35,8 @@ def home():
 def error(e): 
         return render_template('error.html'), 404
 
-
-
-
-
-
-
+# =====================================================================
+# Users
 
 # users directory
 @app.route('/users')
@@ -51,10 +47,6 @@ def users_directory():
         
         return render_template("users/directory.html", users=users)
                                
-
-
-
-
 
 # adding a user
 @app.route('/users/new', methods=["GET"])
@@ -73,11 +65,6 @@ def add_users():
         db.session.add(new_user)
         db.session.commit()
         return redirect("/users")
-
-
-
-
-
 
 
 # specific user and capabilities
@@ -114,10 +101,9 @@ def delete_user(user_id):
         db.session.commit()
         return redirect("/users")
 
-
-
-
+# =====================================================================
 # Posts
+
 @app.route('/users/<int:user_id>/posts', methods=["GET"])
 def get_posts(user_id):
         
@@ -189,3 +175,89 @@ def delete_post(post_id):
         db.session.commit()
         
         return redirect(f"/")
+
+
+
+
+
+
+
+
+
+
+# =====================================================================
+# tags
+@app.route('/tags')
+def tags():
+        
+        tags = Tag.query.all()
+        return render_template("tags/home.html", tags=tags)
+
+
+# adding a tag
+@app.route('/tags/new')
+def new_tag_get():
+        
+        posts = Post.query.all()
+        return render_template("tags/new.html", posts=posts)
+
+
+@app.route('/tags/new', methods=["POST"])
+def new_tag_post():
+        post_ids = [int(num) for num in request.form.getlist("posts")]
+        posts = Post.query.filter(Post.id.in_(post_ids)).all()
+        new_tag = Tag(tag_text=request.form['tag_text'], posts = posts)
+
+        db.session.add(new_tag)
+        db.session.commit()
+
+        return redirect( "/tags" )
+
+
+
+# specific  tags
+@app.route('/tags/<int:tag_id>')
+def inspect_tag(tag_id):
+        # inspect post  more info page
+        tag = Tag.query.get_or_404(tag_id)
+        return render_template("tags/show.html", tag=tag)
+
+@app.route('/tags/<int:tag_id>/edit')
+def edit_tag(tag_id):
+        # inspect post  more info page
+        tag = Tag.query.get_or_404(tag_id)
+        posts = Post.query.all()
+        return render_template("tags/edit.html", tag=tag, posts=posts)
+
+@app.route('/tags/<int:tag_id>/edit', methods=["POST"])
+def update_tag(tag_id):
+        # inspect post  more info page
+        tag = Tag.query.get_or_404(tag_id)
+        tag.tag_text = request.form["tag_text"]
+        # post_ids = Post.query.filter(Post.id.in_(post_ids)).all()
+        post_ids = request.form.getlist("posts")
+        # tag.tag_text = tag_text
+        if post_ids:
+                post_ids = [int(pid) for pid in post_ids]
+                posts = Post.query.filter(Post.id.in_(post_ids)).all()
+
+        try:
+            db.session.add(tag)
+            db.session.commit()
+        except Exception as e:
+                db.session.rollback()
+                print(f"Error updating post: {e}")
+                return "Error updating post", 500
+
+        return redirect("/tags")
+
+@app.route('/tags/<int:tag_id>/delete', methods=["POST"])
+def delete_tag(tag_id):
+        # inspect post  more info page
+        tag = Tag.query.get_or_404(tag_id)
+
+        db.session.delete(tag)
+        db.session.commit()
+        
+        return redirect("/tags")
+

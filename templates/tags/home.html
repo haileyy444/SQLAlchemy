@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %} Blogly {% endblock %}
+   
+{% block content %}
+
+    <h1>Trending Tags</h1>
+
+    <ul>
+    {% for tag in tags %}
+        <li class="list-group-item">
+            <a href="/tags/{{tag.id}}">{{tag.tag_text}}</a>
+        </li>
+    
+   
+     {% else %}
+        <p>No Tags</p>    
+    {% endfor %}
+        <p class="mt-3">
+            <a class="btn btn-sm btn-secondary" href="/tags/new">Add New Tag</a>
+        </p>
+  
+{% endblock %}
