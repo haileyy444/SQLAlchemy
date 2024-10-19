@@ -3,6 +3,7 @@
 from flask import Flask, request, redirect, render_template, current_app
 from flask_debugtoolbar import DebugToolbarExtension
 from models import db, connect_db, User, Post
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql:///blogly'
@@ -25,7 +26,8 @@ with app.app_context():
 @app.route('/')
 def home():
         # Home Page
-        posts = Post.query.order_by(Post.post_date.desc()).limit(5).all()
+        # posts = Post.query.order_by(Post.post_date.desc()).limit(5).all()
+        posts = Post.query.options(joinedload(Post.author)).all()
         return render_template("posts/directory.html", posts=posts)
 
 
@@ -162,13 +164,21 @@ def edit_post(post_id):
 def update_post(post_id):
         # inspect post  more info page
         post = Post.query.get_or_404(post_id)
-        post.title = request.form["post_title"]
-        post.text = request.form["post_text"]
+        post_title = request.form["post_title"]
+        post_text = request.form["post_text"]
 
-        db.session.add(post)
-        db.session.commit()
+        post.post_title = post_title
+        post.post_text = post_text
 
-        return redirect(f"/users/{post.user.id}")
+        try:
+            db.session.add(post)
+            db.session.commit()
+        except Exception as e:
+                db.session.rollback()
+                print(f"Error updating post: {e}")
+                return "Error updating post", 500
+
+        return redirect(f"/users/{post.author.id}")
 
 @app.route('/posts/<int:post_id>/delete', methods=["POST"])
 def delete_post(post_id):
@@ -178,4 +188,4 @@ def delete_post(post_id):
         db.session.delete(post)
         db.session.commit()
         
-        return redirect(f"/users/{post.user.id}")
+        return redirect(f"/")

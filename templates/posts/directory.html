@@ -3,25 +3,31 @@
 {% block title %} Blogly {% endblock %}
    
 {% block content %}
-<nav>
-    <span class="mt-3">
-        <a class="btn btn-sm btn-secondary" href="/">Home</a>
-        <a class="btn btn-sm btn-secondary" href="/users">Users Directory</a>
-        
-    </span>
-    
-</nav>
+
     <h1>Recent Posts</h1>
 
     {% for post in posts %}
-        <h2 class="mt-4"><a href="/posts/{{post.id}}">{{post.post_title}}</a></h2>
-        <p>{{post.post_text}}</p>
-        <p><small>By {{post.user.full_name}} on {{post.friendly_date}}</small></p>
-    {% else %}
+        <div class="col-sm-10 col-6 list-group-item">
+        
+            <li class=" mt-3 row" >
+                {%if post.author.image_url %}
+                <div class="col-sm-2 col-6 align">
+                    <img class="img-fluid" src="{{post.author.image_url}}" alt="{{post.author.full_name}} ">
+                </div>
+            {% endif %}
+                <div class="col-sm-10 col-12 ">
+                    <h3 class="mt-3"><a href="/posts/{{post.id}}">{{post.post_title}}</a></h3>
+                    <h5>{{post.post_text}}</h5>
+                    <p><small>By {{post.author.full_name}} on {{post.friendly_date}}</small></p>
+                </div>
+            </li>
+         </div>
+   
+     {% else %}
         <p>No Posts</p>    
     {% endfor %}
-        <p class="mt-3">
+        <!-- <p class="mt-3">
             <a class="btn btn-sm btn-secondary" href="/users/new">Add User</a>
-        </p>
+        </p> -->
   
 {% endblock %}

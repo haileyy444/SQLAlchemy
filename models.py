@@ -1,5 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
-import datetime
+from sqlalchemy.orm import relationship
+from datetime import datetime
 
 db = SQLAlchemy()
 
@@ -31,7 +32,7 @@ class Post(db.Model):
     post_date = db.Column(db.DateTime, nullable=False, default=datetime.datetime.now)
 
 
-    # user = db.relationship("User", backref=db.backref("posts", lazy=True))
+    user = relationship("User", back_populates = "posts")
     
     @property
     def friendly_date(self): 
